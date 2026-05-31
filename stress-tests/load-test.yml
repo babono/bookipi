@@ -1,0 +1,20 @@
+config:
+  target: "http://localhost:3001"
+  phases:
+    - duration: 10          # The test runs for 10 seconds
+      arrivalRate: 200      # 200 new users spawn every single second
+      name: "The Flash Sale Surge"
+  
+  # This tells Artillery to automatically track status codes (200, 400, 500)
+  plugins:
+    expect: {}
+
+scenarios:
+  - name: "Concurrent Purchase Attempt"
+    flow:
+      - post:
+          url: "/api/sale/purchase"
+          json:
+            # We use Artillery's built-in random string generator 
+            # so every single request acts like a unique user
+            userId: "stress_user_{{$randomString()}}"
