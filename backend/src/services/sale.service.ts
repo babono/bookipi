@@ -40,4 +40,10 @@ export class SaleService {
 
         return result as number;
     }
+
+    // Check if a user is already in the success set
+    static async hasPurchased(userId: string): Promise<boolean> {
+        const result = await redis.sismember('sale:users', userId);
+        return result === 1;
+    }
 }
