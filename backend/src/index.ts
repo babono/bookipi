@@ -3,6 +3,7 @@ import express from 'express';
 import cors from 'cors';
 import saleRoutes from './routes/sale.routes';
 import { SaleService } from './services/sale.service';
+import redis from './redis';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -13,8 +14,14 @@ app.use(express.json());
 // Mount our flash sale routes
 app.use('/api/sale', saleRoutes);
 
-app.get('/health', (req, res) => {
-    res.status(200).json({ status: 'ok', message: 'Flash sale server is running' });
+app.get('/health', async (req, res) => {
+    try {
+        await redis.ping();
+        res.status(200).json({ status: 'ok', message: 'Flash sale server is running', redis: 'connected' });
+    } catch (error) {
+        console.error('Health check failed - Redis is unreachable:', error);
+        res.status(503).json({ status: 'error', message: 'Service Unavailable - Redis is down', redis: 'disconnected' });
+    }
 });
 
 app.listen(PORT, async () => {
