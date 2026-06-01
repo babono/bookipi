@@ -330,25 +330,27 @@ function App() {
               </div>
             )}
 
-            <div className="flex flex-col gap-4">
-              <input
-                type="text"
-                placeholder="Enter your email"
-                value={userId}
-                onChange={(e) => setUserId(e.target.value)}
-                disabled={saleStatus !== 'active' || isLoading}
-                className="w-full p-4 border border-blue-400 bg-white rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-[#1361e9] outline-none transition-all disabled:bg-gray-100 disabled:cursor-not-allowed font-medium"
-              />
+            {saleStatus === 'active' && (
+              <div className="flex flex-col gap-4">
+                <input
+                  type="text"
+                  placeholder="Enter your email"
+                  value={userId}
+                  onChange={(e) => setUserId(e.target.value)}
+                  disabled={isLoading}
+                  className="w-full p-4 border border-blue-400 bg-white rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-[#1361e9] outline-none transition-all disabled:bg-gray-100 disabled:cursor-not-allowed font-medium"
+                />
 
-              <button
-                onClick={handlePurchase}
-                disabled={saleStatus !== 'active' || isLoading}
-                className="w-full text-white font-semibold py-4 px-4 rounded-xl shadow-blue-500/40 shadow-xl hover:shadow-blue-500/60 hover:-translate-y-1 transition-all disabled:from-gray-300 disabled:to-gray-300 disabled:text-gray-500 disabled:shadow-none disabled:transform-none disabled:cursor-not-allowed flex justify-center items-center text-lg active:scale-95"
-                style={{ backgroundImage: 'linear-gradient(90deg, #095ae9 3%, #0047c4 100%)' }}
-              >
-                {isLoading ? <span className="animate-pulse">Processing...</span> : 'Claim My Lifetime Deal'}
-              </button>
-            </div>
+                <button
+                  onClick={handlePurchase}
+                  disabled={isLoading}
+                  className="w-full font-semibold py-4 px-4 rounded-xl shadow-blue-500/40 shadow-xl hover:shadow-blue-500/60 hover:-translate-y-1 transition-all disabled:bg-gray-200 disabled:text-gray-400 disabled:shadow-none disabled:transform-none disabled:cursor-not-allowed flex justify-center items-center text-lg active:scale-95 text-white"
+                  style={{ backgroundImage: isLoading ? 'none' : 'linear-gradient(90deg, #095ae9 3%, #0047c4 100%)' }}
+                >
+                  {isLoading ? <span className="animate-pulse">Processing...</span> : 'Claim My Lifetime Deal'}
+                </button>
+              </div>
+            )}
 
             {feedback && (
               <div className={`mt-6 p-4 rounded-xl flex flex-col gap-1.5 ${feedback.includes('✅') ? 'bg-[#f0fdf4] text-[#065f46]' : 'bg-red-50 border border-red-200 text-red-700'}`}>
