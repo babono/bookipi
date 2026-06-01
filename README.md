@@ -1,4 +1,6 @@
-# High-Throughput Flash Sale System
+# Bookipi Full Stack Engineer Take Home Test | High-Throughput Flash Sale System
+
+![AuraApp Banner](image-banner.png)
 
 🟢 **Live Demo:** [https://bookipi.babon.io/](https://bookipi.babon.io/)
 
@@ -47,9 +49,20 @@ graph TD
     C --- H
     C --- S
     C --- U
+    C --- U
 ```
 
-### Design Choices & Trade-offs
+### 📡 API Endpoints
+The backend exposes the following REST and SSE endpoints:
+* **`POST /api/sale/purchase`**: Core transaction endpoint. Evaluates Lua script, handles rate limiting.
+* **`GET /api/sale/status`**: Returns current sale status (active, upcoming, ended) and total stock.
+* **`GET /api/sale/stream`**: Persistent SSE connection that pushes real-time stock decrements and status changes to clients.
+* **`GET /api/sale/purchase-status?userId=X`**: Checks if a user has successfully purchased.
+* **`GET /api/sale/config`**: (Admin) Retrieves the current sale start/end times and total stock.
+* **`POST /api/sale/config`**: (Admin) Updates the sale start/end times and total stock dynamically.
+* **`GET /api/sale/buyers`**: (Admin) Returns the set of all emails/IDs that successfully secured an item.
+
+### 🧠 Design Choices & Trade-offs
 
 * **Redis as the Primary Database:** Traditional relational databases suffer from locking and race conditions under heavy concurrent load. By using Redis, we leverage its single-threaded nature to process commands sequentially, ensuring absolute consistency for the critical purchase path.
 * **Atomic Lua Scripting:** Checking stock, verifying user uniqueness, and decrementing stock are combined into a single atomic Lua script evaluated by Redis. This guarantees that no other commands can interleave during the transaction, completely eliminating race conditions and overselling. The Lua script returns three distinct codes: `1` (success), `0` (sold out), `-1` (already purchased), enabling clean error handling upstream.
@@ -93,6 +106,7 @@ Open a new terminal window, navigate to the frontend directory, install dependen
 ```bash
 cd frontend
 npm install
+cp .env.example .env
 npm run dev
 ```
 *The app will be available at `http://localhost:5173`.*
@@ -105,9 +119,17 @@ This project includes three distinct layers of testing to prove system robustnes
 
 ### Unit & Integration Tests (Business Logic)
 Tests the core Redis Lua scripts to ensure the "one item per user" and "limited stock" rules are correctly enforced.
+
+**Unit Tests (Mocks Redis):**
 ```bash
 cd backend
 npm test
+```
+
+**Integration Tests (Real Redis):**
+```bash
+cd backend
+npm run test:integration
 ```
 
 ### End-to-End Tests (User Journey)
@@ -122,11 +144,19 @@ npx playwright test
 Uses Artillery to simulate thousands of concurrent users attempting to purchase the limited stock simultaneously. 
 
 **How to run:**
-```bash
-cd stress-tests
-npm install
-npm test
-```
+To see the concurrency controls in action, you must run the backend server in `test` mode to bypass the strict IP rate limiter (otherwise, Artillery will just get 1980 HTTP 429 Too Many Requests errors since all requests originate from your local IP).
+
+1. Start the backend in test mode (in a separate terminal):
+   ```bash
+   cd backend
+   NODE_ENV=test npm run dev
+   ```
+2. Run the stress test and the invariant verification script:
+   ```bash
+   cd stress-tests
+   npm install
+   npm test
+   ```
 
 **Stress Test Expected Outcomes:**
 The Artillery script blasts the `/purchase` endpoint with 2,000 unique virtual users over a 10-second window. After it finishes, an automated verification script connects directly to Redis to mathematically prove the concurrency controls are completely effective:
