@@ -24,8 +24,8 @@ graph TD
 Designing for high throughput requires acknowledging and mitigating potential points of failure:
 * **Server Crashes & Restarts:** State is entirely externalized to Redis. If the Express server crashes mid-sale, no data is lost. Upon restarting, the server uses an atomic `HSETNX` and `SET ... NX` initialization sequence to ensure it never overwrites an ongoing sale or existing stock count.
 * **Redis Downtime:** Redis acts as the single source of truth. If Redis goes down, the Express API will cleanly return HTTP 500 errors. Once Redis recovers, the system automatically resumes processing without needing manual intervention or data reconciliation.
-* **Horizontal Scalability:** Because the Node.js API is completely stateless, scaling out simply requires spinning up more Express instances behind a load balancer (e.g., Nginx, AWS ALB). The atomic Lua scripts ensure that concurrent requests across multiple backend instances never result in race conditions.
 * **Network Partitions:** If communication between Express and Redis drops, purchase attempts will time out and return an error to the user. Since the Lua script transaction logic lives entirely inside Redis, a partial execution or split-brain scenario where stock is decremented but the user isn't recorded is impossible.
+* **Future Scaling (Checkout & Message Queues):** This system is scoped to the high-throughput inventory reservation phase. In a complete e-commerce platform (like Shopee or Amazon), this reservation would grant the user a 10-minute temporary lock. The system would drop the successful reservation onto a message queue (e.g., RabbitMQ, Kafka) to be consumed by a slower checkout/payment service, decoupling the ultra-fast Redis reservation from the slower third-party payment gateway. At that payment phase, strict idempotency keys would be introduced to prevent double-charging.
 
 ---
 
