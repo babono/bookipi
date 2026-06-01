@@ -165,3 +165,16 @@ The Artillery script blasts the `/purchase` endpoint with 2,000 unique virtual u
 * **HTTP 400 (Bad Request): The remaining users.** Rejected safely with accurate error messaging (Sold Out / Already Purchased).
 * **HTTP 500 (Server Error): 0.** The Express server remains stable and handles the load without crashing.
 * **Invariant Check (Passed):** The post-test script verifies that Redis stock is exactly `0` and exactly `N` unique users are recorded in the buyers set, proving no overselling or double-purchasing occurred.
+
+---
+
+## 🤖 AI Utilization & Development Process
+
+This project was built using a modern, AI-assisted development workflow. By leveraging multiple Large Language Models (LLMs), I was able to rapidly prototype, iterate, and refine complex architectural patterns:
+
+* **Brainstorming & Architecture:** I used AI to explore different concurrency control mechanisms, evaluating the trade-offs between traditional SQL transactions, message queues, and Redis Lua scripting before settling on the atomic Redis approach for maximum throughput.
+* **Implementation:** I utilized AI coding assistants to quickly scaffold boilerplate code, generate the React component structure, and write the initial Express.js routes, allowing me to focus entirely on the complex business logic (the Lua scripts and SSE stream).
+* **Iterating & Debugging:** I actively engaged with multiple LLMs to troubleshoot rate-limiting behavior during stress testing, refine the Playwright E2E testing setup, and optimize the frontend UX based on design feedback.
+* **Testing Generation:** The automated testing suites (unit, integration, and Artillery stress tests) were heavily accelerated by AI, ensuring comprehensive test coverage across all edge cases without manually writing hundreds of lines of repetitive test assertions.
+
+Crucially, my years of experience in software engineering provided the foundational intuition needed to guide these models effectively. Having deep domain knowledge and a strong **product-builder mindset** allowed me to enforce architectural best practices, prioritize user experience, ask the right questions, and critically evaluate the AI's suggestions. This dynamic doesn't just allow me to produce code faster—it enables me to learn and adapt to new paradigms much more effectively.
