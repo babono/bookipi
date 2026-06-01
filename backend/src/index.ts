@@ -8,7 +8,11 @@ import redis from './redis';
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-app.use(cors());
+const corsOptions = {
+    origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+    optionsSuccessStatus: 200 // some legacy browsers choke on 204
+};
+app.use(cors(corsOptions));
 app.use(express.json());
 
 // Mount our flash sale routes
