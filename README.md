@@ -138,7 +138,7 @@ Uses Playwright to simulate a real user navigating the frontend, attempting a pu
 ```bash
 cd e2e-tests
 npm install
-npx playwright test
+npm test
 ```
 
 ### Stress Tests (High Throughput Simulation)
