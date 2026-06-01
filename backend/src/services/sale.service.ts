@@ -129,4 +129,9 @@ export class SaleService {
         const result = await redis.sismember('sale:users', userId);
         return result === 1;
     }
+
+    // Get all successful buyers
+    static async getBuyers(): Promise<string[]> {
+        return await redis.smembers('sale:users');
+    }
 }

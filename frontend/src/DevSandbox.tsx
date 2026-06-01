@@ -33,6 +33,7 @@ export default function DevSandbox({ onConfigSaved }: DevSandboxProps) {
   const [totalStock, setTotalStock] = useState(100);
   const [saving, setSaving] = useState(false);
   const [feedback, setFeedback] = useState('');
+  const [buyers, setBuyers] = useState<string[]>([]);
 
   // Load config when the panel opens
   useEffect(() => {
@@ -47,6 +48,11 @@ export default function DevSandbox({ onConfigSaved }: DevSandboxProps) {
         setTotalStock(data.totalStock);
       })
       .catch(() => setFeedback('Failed to load config'));
+
+    fetch(`${API_BASE}/api/sale/buyers`)
+      .then((res) => res.json())
+      .then((data: string[]) => setBuyers(data || []))
+      .catch(() => {});
   }, [isOpen]);
 
   const handleSave = async () => {
@@ -68,6 +74,7 @@ export default function DevSandbox({ onConfigSaved }: DevSandboxProps) {
 
       if (res.ok) {
         setFeedback('✅ ' + data.message);
+        setBuyers([]); // Clear buyers list locally since save resets it
         onConfigSaved();
       } else {
         setFeedback('❌ ' + (data.error || 'Failed to save'));
@@ -84,7 +91,7 @@ export default function DevSandbox({ onConfigSaved }: DevSandboxProps) {
       {/* Gear button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed top-4 right-4 z-50 p-2.5 bg-white/80 backdrop-blur-sm border border-gray-200 rounded-xl shadow-md hover:shadow-lg hover:bg-white transition-all cursor-pointer group"
+        className="p-2 bg-[#095ae9] rounded-xl shadow-sm hover:shadow-md hover:opacity-90 transition-all cursor-pointer group flex items-center justify-center"
         aria-label="Developer Sandbox"
         title="Developer Sandbox"
       >
@@ -94,7 +101,7 @@ export default function DevSandbox({ onConfigSaved }: DevSandboxProps) {
           fill="none"
           stroke="currentColor"
           strokeWidth={1.5}
-          className="w-5 h-5 text-gray-500 group-hover:text-gray-800 transition-colors group-hover:rotate-90 duration-300"
+          className="w-6 h-6 text-white transition-transform group-hover:rotate-90 duration-300"
         >
           <path
             strokeLinecap="round"
@@ -111,7 +118,7 @@ export default function DevSandbox({ onConfigSaved }: DevSandboxProps) {
 
       {/* Backdrop + panel */}
       {isOpen && (
-        <div className="fixed inset-0 z-40 flex justify-end" onClick={() => setIsOpen(false)}>
+        <div className="fixed inset-0 z-[60] bg-black/20 backdrop-blur-sm flex justify-end" onClick={() => setIsOpen(false)}>
           <div
             className="w-full max-w-sm h-full bg-white shadow-2xl border-l border-gray-200 overflow-y-auto animate-slide-in"
             onClick={(e) => e.stopPropagation()}
@@ -196,6 +203,30 @@ export default function DevSandbox({ onConfigSaved }: DevSandboxProps) {
                   {feedback}
                 </div>
               )}
+
+              {/* Buyers Log */}
+              <div className="pt-4 border-t border-gray-100">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-sm font-semibold text-gray-800">Successful Buyers</h3>
+                  <span className="text-xs font-medium bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">{buyers.length}</span>
+                </div>
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 max-h-48 overflow-y-auto">
+                  {buyers.length === 0 ? (
+                    <p className="text-xs text-gray-500 italic text-center py-2">No buyers yet.</p>
+                  ) : (
+                    <ul className="space-y-1.5">
+                      {buyers.map((buyer, idx) => (
+                        <li key={idx} className="text-xs text-gray-700 font-mono break-all bg-white px-2 py-1.5 rounded border border-gray-100 shadow-sm flex items-center gap-2">
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5 text-green-500 flex-shrink-0">
+                            <path fillRule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm3.857-9.809a.75.75 0 0 0-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 1 0-1.06 1.061l2.5 2.5a.75.75 0 0 0 1.137-.089l4-5.5Z" clipRule="evenodd" />
+                          </svg>
+                          {buyer}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
         </div>

@@ -21,5 +21,6 @@ router.get('/purchase-status', SaleController.checkPurchaseStatus);
 // Admin / config endpoints
 router.get('/config', SaleController.getConfig);
 router.post('/config', SaleController.setConfig);
+router.get('/buyers', SaleController.getBuyers);
 
 export default router;

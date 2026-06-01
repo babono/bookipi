@@ -186,4 +186,15 @@ export class SaleController {
             res.status(500).json({ error: 'Internal server error' });
         }
     }
+
+    // GET /api/sale/buyers — Retrieve list of successful buyers
+    static async getBuyers(req: Request, res: Response) {
+        try {
+            const buyers = await SaleService.getBuyers();
+            res.json(buyers);
+        } catch (error) {
+            console.error('Get buyers error:', error);
+            res.status(500).json({ error: 'Internal server error' });
+        }
+    }
 }
