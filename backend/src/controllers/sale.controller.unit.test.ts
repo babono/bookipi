@@ -39,7 +39,7 @@ describe('SaleController - Unit Tests', () => {
             await SaleController.purchase(req, res);
 
             expect(res.status).toHaveBeenCalledWith(400);
-            expect(res.json).toHaveBeenCalledWith({ error: 'userId is required' });
+            expect(res.json).toHaveBeenCalledWith({ error: 'userId must be a valid string' });
         });
 
         it('should reject purchases before the sale starts', async () => {

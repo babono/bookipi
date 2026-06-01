@@ -7,7 +7,7 @@ const router = Router();
 // Protect the purchase endpoint from abuse/DoS
 const purchaseLimiter = rateLimit({
     windowMs: 10 * 1000, // 10 seconds
-    max: 10, // Limit each IP to 10 requests per window
+    max: process.env.NODE_ENV === 'test' ? 10000 : 10, // Allow high volume for local stress tests
     message: { error: 'Too many purchase attempts, please try again later.' },
     standardHeaders: true,
     legacyHeaders: false,
