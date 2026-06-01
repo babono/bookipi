@@ -1,9 +1,9 @@
 import Redis from 'ioredis';
 
-// Connect to the local Redis container on the default port
+// Connect to Redis using environment variables (loaded by dotenv in index.ts)
 const redis = new Redis({
-    host: 'localhost',
-    port: 6379,
+    host: process.env.REDIS_HOST || 'localhost',
+    port: parseInt(process.env.REDIS_PORT || '6379', 10),
 });
 
 redis.on('connect', () => {

@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import saleRoutes from './routes/sale.routes';
@@ -21,10 +22,11 @@ app.listen(PORT, async () => {
 
     // Atomically initialize a default sale config only if none exists in Redis.
     // Uses HSETNX under the hood — safe even if multiple server instances start simultaneously.
+    const defaultStock = parseInt(process.env.DEFAULT_STOCK || '100', 10);
     const defaultConfig = {
         startTime: new Date(Date.now() - 10000).toISOString(),
         endTime: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
-        totalStock: 100,
+        totalStock: defaultStock,
     };
 
     const wasInitialized = await SaleService.initializeSaleIfNew(defaultConfig);
