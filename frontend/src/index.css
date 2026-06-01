@@ -1,5 +1,58 @@
 @import "tailwindcss";
 
+@font-face {
+  font-family: 'Haffer';
+  src: url('./assets/fonts/Haffer-TRIAL-Thin.otf') format('opentype');
+  font-weight: 100;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Haffer';
+  src: url('./assets/fonts/Haffer-TRIAL-Light.otf') format('opentype');
+  font-weight: 300;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Haffer';
+  src: url('./assets/fonts/Haffer-TRIAL-Regular.otf') format('opentype');
+  font-weight: 400;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Haffer';
+  src: url('./assets/fonts/Haffer-TRIAL-Medium.otf') format('opentype');
+  font-weight: 500;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Haffer';
+  src: url('./assets/fonts/Haffer-TRIAL-SemiBold.otf') format('opentype');
+  font-weight: 600;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Haffer';
+  src: url('./assets/fonts/Haffer-TRIAL-Bold.otf') format('opentype');
+  font-weight: 700;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Haffer';
+  src: url('./assets/fonts/Haffer-TRIAL-Heavy.otf') format('opentype');
+  font-weight: 800;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Haffer';
+  src: url('./assets/fonts/Haffer-TRIAL-Black.otf') format('opentype');
+  font-weight: 900;
+  font-style: normal;
+}
+
+@theme {
+  --font-sans: "Haffer", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+}
+
 @keyframes slide-in {
   from {
     transform: translateX(100%);
