@@ -20,6 +20,13 @@ graph TD
 * **Monorepo Structure:** The frontend, backend, and all testing suites are housed in a single repository. While microservices might be used in a larger production environment, a monorepo provides the simplest developer experience for building, running, and reviewing this specific project.
 * **Pragmatic UI:** The frontend is built with React and styled using Tailwind CSS. This allows for a clean, responsive, and modern interface without over-engineering complex custom CSS architectures.
 
+### 🛡️ Robustness & Fault Tolerance
+Designing for high throughput requires acknowledging and mitigating potential points of failure:
+* **Server Crashes & Restarts:** State is entirely externalized to Redis. If the Express server crashes mid-sale, no data is lost. Upon restarting, the server uses an atomic `HSETNX` and `SET ... NX` initialization sequence to ensure it never overwrites an ongoing sale or existing stock count.
+* **Redis Downtime:** Redis acts as the single source of truth. If Redis goes down, the Express API will cleanly return HTTP 500 errors. Once Redis recovers, the system automatically resumes processing without needing manual intervention or data reconciliation.
+* **Horizontal Scalability:** Because the Node.js API is completely stateless, scaling out simply requires spinning up more Express instances behind a load balancer (e.g., Nginx, AWS ALB). The atomic Lua scripts ensure that concurrent requests across multiple backend instances never result in race conditions.
+* **Network Partitions:** If communication between Express and Redis drops, purchase attempts will time out and return an error to the user. Since the Lua script transaction logic lives entirely inside Redis, a partial execution or split-brain scenario where stock is decremented but the user isn't recorded is impossible.
+
 ---
 
 ## 🚀 How to Run the Project
