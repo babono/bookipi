@@ -1,14 +1,26 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, request } from '@playwright/test';
 
 test.describe('Flash Sale User Journey', () => {
+
+    test.beforeAll(async () => {
+        // Reset the backend sale state to ensure it is ACTIVE before the test starts
+        const req = await request.newContext();
+        await req.post('http://localhost:3001/api/sale/config', {
+            data: {
+                startTime: new Date(Date.now() - 60000).toISOString(),
+                endTime: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+                totalStock: 100
+            }
+        });
+    });
 
     test('User should be able to secure a spot and be blocked from doing it twice', async ({ page }) => {
         // Generate the user ID *inside* the test so it remains consistent for this entire session
         const testUser = `testuser_${Date.now()}@example.com`;
 
         // 1. Navigate to the frontend
-        await page.goto('http://localhost:5173');
-        await expect(page.locator('text=ACTIVE')).toBeVisible();
+        await page.goto('/');
+        await expect(page.locator('text=active')).toBeVisible();
 
         // 2. Attempt the first purchase
         await page.getByPlaceholder('Enter your email').fill(testUser);
