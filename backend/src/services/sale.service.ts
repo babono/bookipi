@@ -27,8 +27,23 @@ export class SaleService {
     return 1
   `;
 
+    // Atomic Lua script for safe initialization — only sets config if none exists.
+    // Returns 1 if initialized, 0 if config already existed.
+    private static initScript = `
+    local existed = redis.call('HSETNX', KEYS[1], 'startTime', ARGV[1])
+    if existed == 0 then
+        return 0
+    end
+    redis.call('HSET', KEYS[1], 'endTime', ARGV[2], 'totalStock', ARGV[3])
+    redis.call('SET', KEYS[2], ARGV[3])
+    redis.call('DEL', KEYS[3])
+    return 1
+  `;
+
     // --- Sale Configuration (stored in Redis) ---
 
+    // Explicitly set (or reset) the sale config — used by the admin API.
+    // This intentionally overwrites any existing config.
     static async setSaleConfig(config: SaleConfig) {
         await redis.hset('sale:config', {
             startTime: config.startTime,
@@ -39,6 +54,22 @@ export class SaleService {
         // Reset stock and clear previous buyers when config is applied
         await redis.set('sale:stock', config.totalStock);
         await redis.del('sale:users');
+    }
+
+    // Atomically initialize the sale only if no config exists yet.
+    // Safe for concurrent server starts — uses HSETNX so the first writer wins.
+    static async initializeSaleIfNew(config: SaleConfig): Promise<boolean> {
+        const result = await redis.eval(
+            this.initScript,
+            3,
+            'sale:config',
+            'sale:stock',
+            'sale:users',
+            config.startTime,
+            config.endTime,
+            config.totalStock.toString()
+        );
+        return result === 1;
     }
 
     static async getSaleConfig(): Promise<SaleConfig> {
@@ -63,9 +94,15 @@ export class SaleService {
 
     // --- Stock Management ---
 
-    static async initializeStock(amount: number) {
-        await redis.set('sale:stock', amount);
-        await redis.del('sale:users');
+    // Only sets stock if the key doesn't already exist (NX).
+    // Returns true if stock was set, false if it was already present.
+    static async initializeStock(amount: number): Promise<boolean> {
+        const result = await redis.set('sale:stock', amount, 'NX');
+        if (result === 'OK') {
+            await redis.del('sale:users');
+            return true;
+        }
+        return false;
     }
 
     static async getStock(): Promise<number> {
