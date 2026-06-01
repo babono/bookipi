@@ -1,10 +1,20 @@
 import { Router } from 'express';
+import rateLimit from 'express-rate-limit';
 import { SaleController } from '../controllers/sale.controller';
 
 const router = Router();
 
+// Protect the purchase endpoint from abuse/DoS
+const purchaseLimiter = rateLimit({
+    windowMs: 10 * 1000, // 10 seconds
+    max: 10, // Limit each IP to 10 requests per window
+    message: { error: 'Too many purchase attempts, please try again later.' },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
 router.get('/status', SaleController.getStatus);
-router.post('/purchase', SaleController.purchase);
+router.post('/purchase', purchaseLimiter, SaleController.purchase);
 router.get('/purchase-status', SaleController.checkPurchaseStatus);
 
 // Admin / config endpoints
