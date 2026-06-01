@@ -67,6 +67,70 @@ export class SaleController {
         }
     }
 
+    // SSE: List of connected clients for real-time stock updates
+    static sseClients: Response[] = [];
+    static isPolling = false;
+
+    // Endpoint to stream real-time stock and status updates via Server-Sent Events (SSE)
+    static streamUpdates(req: Request, res: Response) {
+        // Set standard SSE headers
+        res.setHeader('Content-Type', 'text/event-stream');
+        res.setHeader('Cache-Control', 'no-cache');
+        res.setHeader('Connection', 'keep-alive');
+        
+        // Immediately flush headers
+        res.flushHeaders();
+
+        // Add client to the broadcast list
+        SaleController.sseClients.push(res);
+
+        // Remove client when they disconnect
+        req.on('close', () => {
+            SaleController.sseClients = SaleController.sseClients.filter(client => client !== res);
+        });
+
+        // Start global polling if not already running
+        if (!SaleController.isPolling) {
+            SaleController.startGlobalSSEBroadcast();
+        }
+    }
+
+    // A single global loop that queries Redis once per second and broadcasts to all clients
+    // This scales efficiently because 10,000 clients only require 1 Redis query per Node instance
+    static async startGlobalSSEBroadcast() {
+        SaleController.isPolling = true;
+        setInterval(async () => {
+            if (SaleController.sseClients.length === 0) return;
+
+            try {
+                const config = await SaleService.getSaleConfig();
+                const stock = await SaleService.getStock();
+                const now = new Date();
+                const start = new Date(config.startTime);
+                const end = new Date(config.endTime);
+
+                let status = 'active';
+                if (now < start) status = 'upcoming';
+                else if (now > end) status = 'ended';
+
+                const data = JSON.stringify({
+                    status,
+                    startTime: config.startTime,
+                    endTime: config.endTime,
+                    stock,
+                    totalStock: config.totalStock,
+                });
+
+                // Broadcast to all connected clients
+                SaleController.sseClients.forEach(client => {
+                    client.write(`data: ${data}\n\n`);
+                });
+            } catch (err) {
+                console.error('SSE broadcast error:', err);
+            }
+        }, 1000);
+    }
+
     // Endpoint for a user to check if they have successfully secured an item
     static async checkPurchaseStatus(req: Request, res: Response): Promise<any> {
         const { userId } = req.query;

@@ -28,7 +28,30 @@ function App() {
   }, []);
 
   useEffect(() => {
+    // Initial fetch to get the state immediately
     fetchStatus();
+
+    // Open a persistent Server-Sent Events (SSE) connection for real-time stock updates
+    const eventSource = new EventSource(`${API_BASE}/api/sale/stream`);
+    
+    eventSource.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      setSaleStatus(data.status);
+      setStock(data.stock);
+      setTotalStock(data.totalStock);
+      setStartTime(data.startTime);
+      setEndTime(data.endTime);
+    };
+
+    eventSource.onerror = () => {
+      console.warn('SSE stream disconnected. Attempting to reconnect...');
+      // EventSource automatically attempts to reconnect
+    };
+
+    // Cleanup on unmount
+    return () => {
+      eventSource.close();
+    };
   }, [fetchStatus]);
 
   useEffect(() => {

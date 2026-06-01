@@ -14,6 +14,7 @@ const purchaseLimiter = rateLimit({
 });
 
 router.get('/status', SaleController.getStatus);
+router.get('/stream', SaleController.streamUpdates);
 router.post('/purchase', purchaseLimiter, SaleController.purchase);
 router.get('/purchase-status', SaleController.checkPurchaseStatus);
 
