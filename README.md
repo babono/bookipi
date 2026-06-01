@@ -8,24 +8,54 @@ To ensure the system can handle a sudden surge in traffic and manage inventory a
 
 ```mermaid
 graph TD
-    A[React Frontend] -->|REST API| B(Express Node.js Server)
-    B -->|Atomic Lua Scripts| C[(Redis Docker Container)]
-    C -->|Status/Success/Fail| B
-    B -->|JSON Response| A
+    subgraph "Client Layer"
+        A["React SPA<br/>(Vite + TypeScript)"]
+    end
+
+    subgraph "API Layer"
+        RL["Rate Limiter<br/>(express-rate-limit)"]
+        B["Express.js API Server<br/>(Node.js)"]
+    end
+
+    subgraph "Data Layer"
+        C[("Redis<br/>(Docker Container)")]
+    end
+
+    A -->|"REST: POST /purchase"| RL
+    RL -->|"Passes"| B
+    A <-->|"SSE: GET /stream<br/>(Real-time stock updates)"| B
+    A -->|"REST: GET /status"| B
+
+    B -->|"EVALSHA: Atomic Lua Script<br/>(Check user + Check stock + Decrement)"| C
+    C -->|"1 = Success / 0 = Sold Out / -1 = Duplicate"| B
+
+    subgraph "Redis Data Structures"
+        direction LR
+        H["HASH sale:config<br/>startTime, endTime, totalStock"]
+        S["STRING sale:stock<br/>(Atomic counter)"]
+        U["SET sale:users<br/>(Unique buyer emails)"]
+    end
+
+    C --- H
+    C --- S
+    C --- U
 ```
 
 ### Design Choices & Trade-offs
-* **Redis as the Primary Database:** Traditional relational databases suffer from locking and race conditions under heavy concurrent load. By using Redis, we leverage its single-threaded nature to process commands sequentially, ensuring absolute consistency.
-* **Atomic Lua Scripting:** Checking stock, verifying user uniqueness, and decrementing stock are combined into a single atomic Lua script evaluated by Redis. This guarantees that no other commands can interleave during the transaction, completely eliminating race conditions and overselling.
+
+* **Redis as the Primary Database:** Traditional relational databases suffer from locking and race conditions under heavy concurrent load. By using Redis, we leverage its single-threaded nature to process commands sequentially, ensuring absolute consistency for the critical purchase path.
+* **Atomic Lua Scripting:** Checking stock, verifying user uniqueness, and decrementing stock are combined into a single atomic Lua script evaluated by Redis. This guarantees that no other commands can interleave during the transaction, completely eliminating race conditions and overselling. The Lua script returns three distinct codes: `1` (success), `0` (sold out), `-1` (already purchased), enabling clean error handling upstream.
+* **Server-Sent Events (SSE) for Real-Time Updates:** Instead of polling the server every few seconds (which multiplies load linearly with user count), the frontend establishes a persistent SSE connection (`GET /api/sale/stream`). The server pushes stock updates to all connected clients whenever a purchase occurs. This was chosen over WebSockets because the data flow is unidirectional (server → client), making SSE the simpler and more appropriate protocol.
+* **Rate Limiting:** The purchase endpoint is protected by `express-rate-limit` (10 requests per 10-second window per IP) to mitigate abuse and denial-of-service attempts without impacting legitimate users.
+* **Component-Based Frontend Architecture:** The React frontend is structured with a clear separation of concerns — UI components (`components/`), API service layer (`services/api.ts`), and application state orchestration (`App.tsx`). This mirrors production-grade patterns and ensures the codebase is maintainable and testable.
 * **Monorepo Structure:** The frontend, backend, and all testing suites are housed in a single repository. While microservices might be used in a larger production environment, a monorepo provides the simplest developer experience for building, running, and reviewing this specific project.
-* **Pragmatic UI:** The frontend is built with React and styled using Tailwind CSS. This allows for a clean, responsive, and modern interface without over-engineering complex custom CSS architectures.
 
 ### 🛡️ Robustness & Fault Tolerance
 Designing for high throughput requires acknowledging and mitigating potential points of failure:
 * **Server Crashes & Restarts:** State is entirely externalized to Redis. If the Express server crashes mid-sale, no data is lost. Upon restarting, the server uses an atomic `HSETNX` and `SET ... NX` initialization sequence to ensure it never overwrites an ongoing sale or existing stock count.
 * **Redis Downtime:** Redis acts as the single source of truth. If Redis goes down, the Express API will cleanly return HTTP 500 errors. Once Redis recovers, the system automatically resumes processing without needing manual intervention or data reconciliation.
 * **Network Partitions:** If communication between Express and Redis drops, purchase attempts will time out and return an error to the user. Since the Lua script transaction logic lives entirely inside Redis, a partial execution or split-brain scenario where stock is decremented but the user isn't recorded is impossible.
-* **Future Scaling (Checkout & Message Queues):** This system is scoped to the high-throughput inventory reservation phase. In a complete e-commerce platform (like Shopee or Amazon), this reservation would grant the user a 10-minute temporary lock. The system would drop the successful reservation onto a message queue (e.g., RabbitMQ, Kafka) to be consumed by a slower checkout/payment service, decoupling the ultra-fast Redis reservation from the slower third-party payment gateway. At that payment phase, strict idempotency keys would be introduced to prevent double-charging.
+* **Future Scaling (Checkout & Message Queues):** This system is scoped to the high-throughput inventory reservation phase. In a complete e-commerce platform, this reservation would grant the user a temporary lock. The system would drop the successful reservation onto a message queue (e.g., RabbitMQ, Kafka) to be consumed by a slower checkout/payment service, decoupling the ultra-fast Redis reservation from the slower third-party payment gateway. At that payment phase, strict idempotency keys would be introduced to prevent double-charging.
 
 ---
 
