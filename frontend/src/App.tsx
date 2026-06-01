@@ -1,17 +1,30 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import DevSandbox from './DevSandbox';
+
+const API_BASE = 'http://localhost:3001';
 
 function App() {
   const [userId, setUserId] = useState('');
   const [saleStatus, setSaleStatus] = useState('loading...');
+  const [stock, setStock] = useState<number | null>(null);
+  const [totalStock, setTotalStock] = useState<number | null>(null);
   const [feedback, setFeedback] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  useEffect(() => {
-    fetch('http://localhost:3001/api/sale/status')
+  const fetchStatus = useCallback(() => {
+    fetch(`${API_BASE}/api/sale/status`)
       .then((res) => res.json())
-      .then((data) => setSaleStatus(data.status))
+      .then((data) => {
+        setSaleStatus(data.status);
+        setStock(data.stock);
+        setTotalStock(data.totalStock);
+      })
       .catch(() => setSaleStatus('error'));
   }, []);
+
+  useEffect(() => {
+    fetchStatus();
+  }, [fetchStatus]);
 
   const handlePurchase = async () => {
     if (!userId.trim()) {
@@ -23,7 +36,7 @@ function App() {
     setFeedback('');
 
     try {
-      const res = await fetch('http://localhost:3001/api/sale/purchase', {
+      const res = await fetch(`${API_BASE}/api/sale/purchase`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId }),
@@ -36,6 +49,9 @@ function App() {
       } else {
         setFeedback(`❌ ${data.message || data.error}`);
       }
+
+      // Refresh stock count after purchase attempt
+      fetchStatus();
     } catch (error) {
       setFeedback('❌ Network error occurred while purchasing.');
     } finally {
@@ -45,6 +61,8 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4 font-sans">
+      <DevSandbox onConfigSaved={fetchStatus} />
+
       <div className="max-w-md w-full bg-white rounded-xl shadow-lg p-8">
 
         <h1 className="text-3xl font-bold text-gray-900 mb-6 text-center">
@@ -58,6 +76,15 @@ function App() {
             {saleStatus}
           </span>
         </div>
+
+        {stock !== null && totalStock !== null && (
+          <div className="mb-6 p-4 bg-gray-100 rounded-lg flex items-center justify-between">
+            <span className="text-gray-600 font-medium">Stock Remaining:</span>
+            <span className="font-bold text-gray-900">
+              {stock} <span className="text-gray-400 font-normal">/ {totalStock}</span>
+            </span>
+          </div>
+        )}
 
         <div className="flex flex-col gap-4">
           <input
