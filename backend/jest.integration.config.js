@@ -8,6 +8,6 @@ module.exports = {
   transform: {
     ...tsJestTransformCfg,
   },
-  // By default (npm test), only run unit tests — no Redis required
-  testMatch: ["**/*.unit.test.ts"],
+  // Integration tests hit real Redis — requires Docker container running
+  testMatch: ["**/*.integration.test.ts"],
 };
