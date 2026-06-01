@@ -87,11 +87,12 @@ Uses Artillery to simulate thousands of concurrent users attempting to purchase 
 ```bash
 cd stress-tests
 npm install
-npx artillery run load-test.yml
+npm test
 ```
 
 **Stress Test Expected Outcomes:**
-The Artillery script blasts the `/purchase` endpoint with 2,000 unique virtual users over a 10-second window. The expected outcome proves the concurrency controls are completely effective:
-* **HTTP 200 (Success): Exactly 100.** The system correctly limits purchases to the predefined stock, regardless of concurrent request volume.
-* **HTTP 400 (Bad Request): Exactly 1900.** The remaining users are safely rejected with accurate error messaging (Sold Out / Already Purchased).
+The Artillery script blasts the `/purchase` endpoint with 2,000 unique virtual users over a 10-second window. After it finishes, an automated verification script connects directly to Redis to mathematically prove the concurrency controls are completely effective:
+* **HTTP 200 (Success): Exactly equal to total stock.** The system correctly limits purchases to the predefined stock, regardless of concurrent request volume.
+* **HTTP 400 (Bad Request): The remaining users.** Rejected safely with accurate error messaging (Sold Out / Already Purchased).
 * **HTTP 500 (Server Error): 0.** The Express server remains stable and handles the load without crashing.
+* **Invariant Check (Passed):** The post-test script verifies that Redis stock is exactly `0` and exactly `N` unique users are recorded in the buyers set, proving no overselling or double-purchasing occurred.
