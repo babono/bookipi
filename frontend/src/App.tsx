@@ -8,6 +8,9 @@ function App() {
   const [saleStatus, setSaleStatus] = useState('loading...');
   const [stock, setStock] = useState<number | null>(null);
   const [totalStock, setTotalStock] = useState<number | null>(null);
+  const [startTime, setStartTime] = useState<string | null>(null);
+  const [endTime, setEndTime] = useState<string | null>(null);
+  const [timeLeft, setTimeLeft] = useState<string>('');
   const [feedback, setFeedback] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
@@ -18,6 +21,8 @@ function App() {
         setSaleStatus(data.status);
         setStock(data.stock);
         setTotalStock(data.totalStock);
+        setStartTime(data.startTime);
+        setEndTime(data.endTime);
       })
       .catch(() => setSaleStatus('error'));
   }, []);
@@ -25,6 +30,47 @@ function App() {
   useEffect(() => {
     fetchStatus();
   }, [fetchStatus]);
+
+  useEffect(() => {
+    const calculateTimeLeft = () => {
+      if (!startTime || !endTime) return '';
+      
+      const now = new Date().getTime();
+      let targetTime;
+      let prefix = '';
+
+      if (saleStatus === 'upcoming') {
+        targetTime = new Date(startTime).getTime();
+        prefix = 'Starts in: ';
+      } else if (saleStatus === 'active') {
+        targetTime = new Date(endTime).getTime();
+        prefix = 'Ends in: ';
+      } else {
+        return '';
+      }
+
+      const difference = targetTime - now;
+
+      if (difference <= 0) {
+        // Time is up, refresh status to get the new state
+        fetchStatus();
+        return '';
+      }
+
+      const h = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const m = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
+      const s = Math.floor((difference % (1000 * 60)) / 1000);
+
+      return `${prefix}${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+    };
+
+    setTimeLeft(calculateTimeLeft());
+    const timer = setInterval(() => {
+      setTimeLeft(calculateTimeLeft());
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [saleStatus, startTime, endTime, fetchStatus]);
 
   const handlePurchase = async () => {
     if (!userId.trim()) {
@@ -71,10 +117,17 @@ function App() {
 
         <div className="mb-6 p-4 bg-gray-100 rounded-lg flex items-center justify-between">
           <span className="text-gray-600 font-medium">Current Status:</span>
-          <span className={`font-bold uppercase ${saleStatus === 'active' ? 'text-green-600' : 'text-orange-500'
-            }`}>
-            {saleStatus}
-          </span>
+          <div className="text-right">
+            <div className={`font-bold uppercase ${saleStatus === 'active' ? 'text-green-600' : 'text-orange-500'
+              }`}>
+              {saleStatus}
+            </div>
+            {timeLeft && (
+              <div className="text-sm text-gray-500 font-mono mt-1">
+                {timeLeft}
+              </div>
+            )}
+          </div>
         </div>
 
         {stock !== null && totalStock !== null && (
