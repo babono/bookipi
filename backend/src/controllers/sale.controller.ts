@@ -31,9 +31,18 @@ export class SaleController {
 
     // Endpoint for a user to attempt a purchase
     static async purchase(req: Request, res: Response): Promise<any> {
-        const { userId } = req.body;
-        if (!userId) {
-            return res.status(400).json({ error: 'userId is required' });
+        let { userId } = req.body;
+        
+        if (!userId || typeof userId !== 'string') {
+            return res.status(400).json({ error: 'userId must be a valid string' });
+        }
+
+        // Sanitize
+        userId = userId.trim();
+
+        // Enforce length boundary to protect against memory exhaustion / large payload attacks
+        if (userId.length < 1 || userId.length > 100) {
+            return res.status(400).json({ error: 'userId must be between 1 and 100 characters' });
         }
 
         try {
