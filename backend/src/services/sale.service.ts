@@ -1,5 +1,11 @@
 import redis from '../redis';
 
+export interface SaleConfig {
+    startTime: string;
+    endTime: string;
+    totalStock: number;
+}
+
 export class SaleService {
     // The atomic Lua script to prevent race conditions
     private static purchaseScript = `
@@ -21,10 +27,50 @@ export class SaleService {
     return 1
   `;
 
-    // Helper to start the sale
+    // --- Sale Configuration (stored in Redis) ---
+
+    static async setSaleConfig(config: SaleConfig) {
+        await redis.hset('sale:config', {
+            startTime: config.startTime,
+            endTime: config.endTime,
+            totalStock: config.totalStock.toString(),
+        });
+
+        // Reset stock and clear previous buyers when config is applied
+        await redis.set('sale:stock', config.totalStock);
+        await redis.del('sale:users');
+    }
+
+    static async getSaleConfig(): Promise<SaleConfig> {
+        const config = await redis.hgetall('sale:config');
+
+        // Return defaults if nothing is configured yet
+        if (!config || !config.startTime) {
+            const defaultConfig: SaleConfig = {
+                startTime: new Date(Date.now() - 10000).toISOString(),
+                endTime: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+                totalStock: 100,
+            };
+            return defaultConfig;
+        }
+
+        return {
+            startTime: config.startTime,
+            endTime: config.endTime,
+            totalStock: parseInt(config.totalStock, 10),
+        };
+    }
+
+    // --- Stock Management ---
+
     static async initializeStock(amount: number) {
         await redis.set('sale:stock', amount);
-        await redis.del('sale:users'); // Clear previous buyers if any
+        await redis.del('sale:users');
+    }
+
+    static async getStock(): Promise<number> {
+        const stock = await redis.get('sale:stock');
+        return parseInt(stock || '0', 10);
     }
 
     // The core purchase method

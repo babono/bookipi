@@ -1,22 +1,32 @@
 import { Request, Response } from 'express';
 import { SaleService } from '../services/sale.service';
 
-// Mock configuration for the flash sale window.
-// We'll set it to start 10 seconds ago and end in 1 hour so you can test it immediately.
-const SALE_START = new Date(Date.now() - 10000);
-const SALE_END = new Date(Date.now() + 60 * 60 * 1000);
-
 export class SaleController {
 
     // Endpoint to check the status of the flash sale
     static async getStatus(req: Request, res: Response) {
-        const now = new Date();
-        let status = 'active';
+        try {
+            const config = await SaleService.getSaleConfig();
+            const stock = await SaleService.getStock();
+            const now = new Date();
+            const start = new Date(config.startTime);
+            const end = new Date(config.endTime);
 
-        if (now < SALE_START) status = 'upcoming';
-        else if (now > SALE_END) status = 'ended';
+            let status = 'active';
+            if (now < start) status = 'upcoming';
+            else if (now > end) status = 'ended';
 
-        res.json({ status, startTime: SALE_START, endTime: SALE_END });
+            res.json({
+                status,
+                startTime: config.startTime,
+                endTime: config.endTime,
+                stock,
+                totalStock: config.totalStock,
+            });
+        } catch (error) {
+            console.error('Status error:', error);
+            res.status(500).json({ error: 'Internal server error' });
+        }
     }
 
     // Endpoint for a user to attempt a purchase
@@ -26,12 +36,16 @@ export class SaleController {
             return res.status(400).json({ error: 'userId is required' });
         }
 
-        // Enforce the time window
-        const now = new Date();
-        if (now < SALE_START) return res.status(400).json({ error: 'Sale has not started yet' });
-        if (now > SALE_END) return res.status(400).json({ error: 'Sale has ended' });
-
         try {
+            // Enforce the time window from Redis config
+            const config = await SaleService.getSaleConfig();
+            const now = new Date();
+            const start = new Date(config.startTime);
+            const end = new Date(config.endTime);
+
+            if (now < start) return res.status(400).json({ error: 'Sale has not started yet' });
+            if (now > end) return res.status(400).json({ error: 'Sale has ended' });
+
             const result = await SaleService.attemptPurchase(userId);
 
             if (result === 1) return res.json({ success: true, message: 'Purchase successful!' });
@@ -53,6 +67,49 @@ export class SaleController {
             const hasPurchased = await SaleService.hasPurchased(userId as string);
             res.json({ hasPurchased });
         } catch (error) {
+            res.status(500).json({ error: 'Internal server error' });
+        }
+    }
+
+    // --- Admin / Config Endpoints ---
+
+    // GET /api/sale/config — Retrieve current sale configuration
+    static async getConfig(req: Request, res: Response) {
+        try {
+            const config = await SaleService.getSaleConfig();
+            res.json(config);
+        } catch (error) {
+            console.error('Get config error:', error);
+            res.status(500).json({ error: 'Internal server error' });
+        }
+    }
+
+    // POST /api/sale/config — Update sale configuration (resets stock & clears buyers)
+    static async setConfig(req: Request, res: Response): Promise<any> {
+        const { startTime, endTime, totalStock } = req.body;
+
+        if (!startTime || !endTime || totalStock == null) {
+            return res.status(400).json({
+                error: 'startTime, endTime, and totalStock are all required',
+            });
+        }
+
+        if (new Date(endTime) <= new Date(startTime)) {
+            return res.status(400).json({ error: 'endTime must be after startTime' });
+        }
+
+        if (typeof totalStock !== 'number' || totalStock < 1) {
+            return res.status(400).json({ error: 'totalStock must be a positive number' });
+        }
+
+        try {
+            await SaleService.setSaleConfig({ startTime, endTime, totalStock });
+            res.json({
+                success: true,
+                message: 'Sale configuration updated. Stock reset and buyers cleared.',
+            });
+        } catch (error) {
+            console.error('Set config error:', error);
             res.status(500).json({ error: 'Internal server error' });
         }
     }
