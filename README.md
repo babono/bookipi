@@ -1,4 +1,5 @@
-# Bookipi Full Stack Engineer Take Home Test | High-Throughput Flash Sale System
+# Bookipi Full Stack Engineer Take Home Test
+### **High-Throughput Flash Sale System**
 
 ![AuraApp Banner](image-banner.png)
 
