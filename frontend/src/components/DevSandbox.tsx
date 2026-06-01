@@ -1,12 +1,5 @@
 import { useState, useEffect } from 'react';
-
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3001';
-
-interface SaleConfig {
-  startTime: string;
-  endTime: string;
-  totalStock: number;
-}
+import { api, SaleConfig } from '../services/api';
 
 interface DevSandboxProps {
   onConfigSaved: () => void;
@@ -39,9 +32,8 @@ export default function DevSandbox({ onConfigSaved }: DevSandboxProps) {
   useEffect(() => {
     if (!isOpen) return;
     setFeedback('');
-    fetch(`${API_BASE}/api/sale/config`)
-      .then((res) => res.json())
-      .then((data: SaleConfig) => {
+    api.getConfig()
+      .then(({ data }) => {
         setConfig(data);
         setStartTime(toLocalDatetime(data.startTime));
         setEndTime(toLocalDatetime(data.endTime));
@@ -49,9 +41,8 @@ export default function DevSandbox({ onConfigSaved }: DevSandboxProps) {
       })
       .catch(() => setFeedback('Failed to load config'));
 
-    fetch(`${API_BASE}/api/sale/buyers`)
-      .then((res) => res.json())
-      .then((data: string[]) => setBuyers(data || []))
+    api.getBuyers()
+      .then(({ data }) => setBuyers(data || []))
       .catch(() => {});
   }, [isOpen]);
 
@@ -60,19 +51,13 @@ export default function DevSandbox({ onConfigSaved }: DevSandboxProps) {
     setFeedback('');
 
     try {
-      const res = await fetch(`${API_BASE}/api/sale/config`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          startTime: fromLocalDatetime(startTime),
-          endTime: fromLocalDatetime(endTime),
-          totalStock,
-        }),
+      const { ok, data } = await api.setConfig({
+        startTime: fromLocalDatetime(startTime),
+        endTime: fromLocalDatetime(endTime),
+        totalStock,
       });
 
-      const data = await res.json();
-
-      if (res.ok) {
+      if (ok) {
         setFeedback('✅ ' + data.message);
         setBuyers([]); // Clear buyers list locally since save resets it
         onConfigSaved();
