@@ -1,5 +1,13 @@
 # High-Throughput Flash Sale System
 
+🟢 **Live Demo:** [https://bookipi.babon.io/](https://bookipi.babon.io/)
+
+### ☁️ Cloud Infrastructure
+To demonstrate a production-ready deployment, the live demo is hosted across a distributed modern cloud stack:
+- **Frontend:** Hosted on **Vercel** for edge-optimized static asset delivery and custom domain routing.
+- **Backend:** Hosted on **Render** (Node Web Service) to maintain long-lived Server-Sent Event (SSE) connections with clients.
+- **Database:** Hosted on **Upstash** (Serverless Redis) for ultra-low latency, distributed atomic transactions.
+
 This repository contains a full-stack flash sale system designed to handle a large number of concurrent requests, prevent overselling, and ensure each user can only purchase one item.
 
 ## 🏗️ System Architecture & Diagram
