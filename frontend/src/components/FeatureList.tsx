@@ -2,9 +2,11 @@
 export default function FeatureList() {
   return (
     <div className="p-8 lg:p-12 lg:w-2/3">
-      <h3 className="text-2xl font-bold text-[#111928] mb-4">The Diamond Platinum Membership: Product Recap</h3>
-      <p className="text-gray-600 mb-8 leading-relaxed">
-        By combining the highest tiers of the core plans and all premium add-ons, your exclusive package will include the following lifetime benefits:
+      <h3 className="text-3xl font-extrabold text-[#111928] mb-4 leading-tight">
+        Unlock Your Business Potential with the <span className="text-[#1361e9]">Diamond Platinum Lifetime Membership</span>
+      </h3>
+      <p className="text-gray-600 mb-8 text-lg leading-relaxed">
+        We've bundled our absolute highest-tier core plans with every single premium add-on to create the ultimate growth engine. Lock in these exclusive, lifetime benefits today and <span className="font-semibold text-gray-800">never pay monthly subscriptions again:</span>
       </p>
 
       <div className="space-y-6">

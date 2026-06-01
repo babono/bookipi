@@ -102,7 +102,7 @@ export default function CheckoutCard({
           <button
             onClick={handlePurchase}
             disabled={isLoading}
-            className="w-full font-semibold py-4 px-4 rounded-xl shadow-blue-500/40 shadow-xl hover:shadow-blue-500/60 hover:-translate-y-1 transition-all disabled:bg-gray-200 disabled:text-gray-400 disabled:shadow-none disabled:transform-none disabled:cursor-not-allowed flex justify-center items-center text-lg active:scale-95 text-white"
+            className="w-full font-semibold py-4 px-4 rounded-xl shadow-blue-500/40 shadow-xl hover:shadow-blue-500/60 hover:-translate-y-1 transition-all disabled:bg-gray-200 disabled:text-gray-400 disabled:shadow-none disabled:transform-none disabled:cursor-not-allowed cursor-pointer flex justify-center items-center text-lg active:scale-95 text-white"
             style={{ backgroundImage: isLoading ? 'none' : 'linear-gradient(90deg, #095ae9 3%, #0047c4 100%)' }}
           >
             {isLoading ? <span className="animate-pulse">Processing...</span> : 'Claim My Lifetime Deal'}

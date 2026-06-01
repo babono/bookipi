@@ -26,7 +26,7 @@ export default function Hero({ timeLeft, saleStatus }: HeroProps) {
           {(() => {
             const match = timeLeft.match(/^(Starts|Ends) in: (\d{2}):(\d{2}):(\d{2})$/);
             if (!match) return null;
-            const label = match[1] === 'Starts' ? 'Start in' : 'End in';
+            const label = match[1] === 'Starts' ? 'Starts in' : 'Ends in';
             return (
               <>
                 <span className="text-3xl md:text-4xl font-bold text-[#F3B241] mr-2 md:mr-4 tracking-tight">{label}</span>
