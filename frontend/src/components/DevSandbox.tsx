@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { api, SaleConfig } from '../services/api';
+import { api } from '../services/api';
+import type { SaleConfig } from '../services/api';
 
 interface DevSandboxProps {
   onConfigSaved: () => void;
@@ -20,7 +21,6 @@ function fromLocalDatetime(localString: string): string {
 
 export default function DevSandbox({ onConfigSaved }: DevSandboxProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [config, setConfig] = useState<SaleConfig | null>(null);
   const [startTime, setStartTime] = useState('');
   const [endTime, setEndTime] = useState('');
   const [totalStock, setTotalStock] = useState(100);
@@ -34,7 +34,6 @@ export default function DevSandbox({ onConfigSaved }: DevSandboxProps) {
     setFeedback('');
     api.getConfig()
       .then(({ data }) => {
-        setConfig(data);
         setStartTime(toLocalDatetime(data.startTime));
         setEndTime(toLocalDatetime(data.endTime));
         setTotalStock(data.totalStock);

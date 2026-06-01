@@ -1,4 +1,3 @@
-import React from 'react';
 import logoBookipi from '../assets/logo-bookipi.png';
 import DevSandbox from './DevSandbox';
 
